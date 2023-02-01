@@ -2,10 +2,42 @@ const express = require("express");
 const { config } = require("dotenv");
 const TelegramApi = require("node-telegram-bot-api");
 const { accessButton, continuousButtons, payDoneButton } = require("./options");
+const sleep = require("./utils");
+const axios = require("axios");
 
 const app = express();
 const port = process.env.PORT || 3001;
+const TELEGRAM_URI = `https://api.telegram.org/bot${process.env.TELEGRAM_API_TOKEN}/sendMessage`;
+
+app.use(express.json());
+
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
+
 app.get("/", (req, res) => res.type("html").send(html));
+
+app.post("/start", async (req, res) => {
+  const { message } = req.body;
+  const responseText = "test response";
+  const messageText = message?.text?.toLowerCase()?.trim();
+  const chatId = message?.chat?.id;
+  if (!messageText || !chatId) {
+    return res.sendStatus(400);
+  }
+  try {
+    await axios.post(TELEGRAM_URI, {
+      chat_id: chatId,
+      text: responseText,
+    });
+    res.send("Done");
+  } catch (e) {
+    console.log(e);
+    res.send(e);
+  }
+});
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
 
@@ -94,6 +126,17 @@ https://www.tinkoff.ru/rm/elaeva.ekaterina5/mGeOh69614
       //   rarrikateChatId,
       //   `${cbMsg.from.username} ${cbMsg.from.last_name} ${cbMsg.from.first_name}`
       // );
+      await sleep(1000 * 60 * 5);
+      await bot.sendMessage(
+        cbChatId,
+        `Поздравляю тебя! Оплата прошла успешно! 🎉 Для того, чтобы попасть в канал, перейди по ссылке:
+
+        Ссылка на канал
+        
+        *За пару дней до окончания подписки ты получишь напоминание.
+        Продлить подписку ты сможешь в этом же боте
+        Если оплата не поступит вовремя, ты будешь удален(-а) из канала, но в любой момент сможешь вернуться! 🖤`
+      );
     }
   });
 };
